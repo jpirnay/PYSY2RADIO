@@ -17,9 +17,16 @@
 // #define PRI_RATIO       175             // defaults to SBM-20 ratio
 #define PRI_RATIO       122             // defaults to SI-29BG ratio
 #define LOGGING_PEROID    1             // defaults a 1 min logging period
-
 // other defines . . .
 #define LOW_VCC          4200 //mV      // if Vcc < LOW_VCC give low voltage warning
+// RTTY PARAMETERS
+#define R_STRENGTH     6
+#define R_BAUD         50
+#define R_BITS         7
+#define R_STOP         2
+#define R_WAIT         1000000 / R_BAUD // 50 Baud  = 20.000 microseconds
+#define R_FREQ1         433.0
+#define R_FREQ2         433.0005
 
 // BEGIN USER PARAMETER AREA . . .
 #define DEBUG       true              // if true shows available memory
@@ -82,7 +89,6 @@ Adafruit_BMP085 bmp;                    // barometric sensor
 // radio code here
 //Setup radio on SPI with NSEL on pin 9
 rfm22 radio1(9);
-const float freq = 433.0;
 
 
 // ---------------- INIT ---------------
@@ -431,7 +437,7 @@ void LogCount(unsigned long lcnt){
   if (newdata = true) Blink(LED_PIN,1); // show it's receiving
   logfile.sync();                       // force update of the files
   gpsfile.sync();
-
+  radio1.write(0x6d, R_STRENGTH);
   radio1.write(0x07, 0x08); // Radio on
   rtty_txstring(superbuffer);
   radio1.write(0x07, 0x01); // Radio off
@@ -598,13 +604,13 @@ void setupRadio(){
   radio1.write(0x0b,0x12);
   radio1.write(0x0c,0x15);
  
-  radio1.setFrequency(freq);
+  radio1.setFrequency(R_FREQ1);
  
   //Quick test
+  radio1.write(0x6d, R_STRENGTH); // set output power: RF22_REG_6D_TX_POWER: 00 low , 07 high
   radio1.write(0x07, 0x08); // turn tx on
   delay(1000);
   radio1.write(0x07, 0x01); // turn tx off
-  radio1.write(0x6d, 0x07); // set output power: RF22_REG_6D_TX_POWER: 00 low , 07 high
   /*
  #define RF22_TXPOW_1DBM                         0x00
 #define RF22_TXPOW_2DBM                         0x01
@@ -652,14 +658,16 @@ void rtty_txbyte (char c)
         
 	rtty_txbit (0); // Start bit
 	// Send bits for for char LSB first	
-	for (i=0;i<7;i++)
+	for (i=0;i<R_BITS;i++)
 	{
 		if (c & 1) rtty_txbit(1); 
 			else rtty_txbit(0);	
 		c = c >> 1;
 	}
-	rtty_txbit (1); // Stop bit
-        rtty_txbit (1); // Stop bit
+        for (i=0; i<R_STOP; i++) 
+        {
+           rtty_txbit (1); // Stop bit
+        }   
 }
  
 void rtty_txbit (int bit)
@@ -667,12 +675,12 @@ void rtty_txbit (int bit)
   if (bit)
   {
   // high
-    radio1.setFrequency(freq);
+    radio1.setFrequency(R_FREQ1);
   }
   else
   {
 	// low
-    radio1.setFrequency(freq + 0.0005);
+    radio1.setFrequency(R_FREQ2);
   }
   delayMicroseconds(10000); // For 50 Baud uncomment this and the line below. 
   delayMicroseconds(10150); // For some reason you can't do 20150 it just doesn't work.
