@@ -21,7 +21,7 @@
 #define LOW_VCC          4200 //mV      // if Vcc < LOW_VCC give low voltage warning
 // RTTY PARAMETERS
 #define R_STRENGTH     6
-#define R_BAUD         50
+#define R_BAUD         100
 #define R_BITS         7
 #define R_STOP         2
 #define R_WAIT         1000000 / R_BAUD // 50 Baud  = 20.000 microseconds
